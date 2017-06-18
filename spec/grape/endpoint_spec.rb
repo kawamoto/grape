@@ -546,6 +546,59 @@ describe Grape::Endpoint do
       expect(json['nested'].keys).to eq %w(fourth)
       expect(json['nested']['fourth']).to eq '4'
     end
+
+    describe 'with conditional params' do
+      before do
+        subject.get '/dummy' do
+        end
+
+        module ConditionalParams
+          extend Grape::API::Helpers
+
+          params :a_params do
+            requires :a, type: String
+          end
+
+          params :b_params do
+            requires :b, type: String
+          end
+        end
+
+        subject.resource :conditionals do
+          helpers ConditionalParams
+
+          params do
+            requires :type, type: String
+            given type: ->(val) { val == 'A' } do
+              requires :conditional, type: Hash do
+                use :a_params
+              end
+            end
+            given type: ->(val) { val == 'B' } do
+              requires :conditional, type: Hash do
+                use :b_params
+              end
+            end
+          end
+
+          post '/declared' do
+            declared(params)
+          end
+        end
+      end
+
+      it 'accepts first conditional params' do
+        post '/conditionals/declared', { type: 'A', conditional: { a: 'letter A' } }.to_json, 'CONTENT_TYPE' => 'application/json'
+        json = JSON.parse(last_response.body)
+        expect(json).to eq(type: 'A', conditional: { a: 'letter A' })
+      end
+
+      it 'accepts second conditional params' do
+        post '/conditionals/declared', { type: 'B', conditional: { b: 'letter B' } }.to_json, 'CONTENT_TYPE' => 'application/json'
+        json = JSON.parse(last_response.body)
+        expect(json).to eq(type: 'B', conditional: { b: 'letter B' })
+      end
+    end
   end
 
   describe '#declared; call from child namespace' do
