@@ -56,8 +56,15 @@ module Grape
                 passed_children_params = passed_params[declared_parent_param] || passed_params.class.new
                 memo_key = optioned_param_key(declared_parent_param, options)
 
-                memo[memo_key] = handle_passed_param(declared_parent_param, passed_children_params) do
+                param_value = handle_passed_param(declared_parent_param, passed_children_params) do
                   declared(passed_children_params, options, declared_children_params)
+                end
+
+                if param_value.is_a?(Hash)
+                  memo[memo_key] ||= {}
+                  memo[memo_key].try(:deep_merge!, param_value)
+                else
+                  memo[memo_key] = param_value
                 end
               end
             else
