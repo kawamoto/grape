@@ -610,20 +610,20 @@ describe Grape::Endpoint do
           end
 
           post '/declared' do
-            declared(params)
+            declared(params, include_missing: false)
           end
         end
       end
 
       it 'accepts first conditional params' do
         post '/conditionals/declared', { type: 'A', conditional: { a: 'letter A' } }.to_json, 'CONTENT_TYPE' => 'application/json'
-        json = JSON.parse(last_response.body)
+        json = JSON.parse(last_response.body, symbolize_names: true)
         expect(json).to eq(type: 'A', conditional: { a: 'letter A' })
       end
 
       it 'accepts second conditional params' do
         post '/conditionals/declared', { type: 'B', conditional: { b: 'letter B' } }.to_json, 'CONTENT_TYPE' => 'application/json'
-        json = JSON.parse(last_response.body)
+        json = JSON.parse(last_response.body, symbolize_names: true)
         expect(json).to eq(type: 'B', conditional: { b: 'letter B' })
       end
     end
